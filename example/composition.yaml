@@ -1,7 +1,7 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: function-template-go
+  name: function-javascript
 spec:
   compositeTypeRef:
     apiVersion: example.crossplane.io/v1
@@ -10,8 +10,53 @@ spec:
   pipeline:
   - step: run-the-template
     functionRef:
-      name: function-template-go
+      name: function-javascript
     input:
-      apiVersion: template.fn.crossplane.io/v1beta1
+      apiVersion: javascript.fn.crossplane.io/v1beta1
       kind: Input
-      example: "Hello world"
+      metadata:
+        # arbitrary input values can be passed as annotations
+        annotations:
+          input-val-1: "Hello"
+          input-val-2: "Hello"
+      spec:
+        source:
+          inline: |
+            import * as YAML from 'yaml';
+            import * as Base64 from 'base64';
+            
+            export default (req, rsp) => {
+              console.log("request", JSON.stringify(req, null, 2));
+            
+              ["us-east-1", "us-east-2"].forEach((region) => {
+                rsp.setDesiredComposedResource(`bucket-${region}`, {
+                  apiVersion: 'example.org/v1alpha1',
+                  kind: 'Bucket',
+                  metadata: {
+                    annotations: {
+                      'javascript.fn.crossplane.io/ready': 'True',
+                      ...req.input.metadata.annotations
+                    },
+                    labels: {
+                      ...(req.observed.composite.resource.metadata?.labels || {}),
+                      foo: "bar"
+                    },
+                    spec: {
+                      name: `test-${region}`,
+                      region: region,
+                      compositeRegion: req.observed.composite.resource.spec.region,
+                      yamlTest: YAML.stringify({ foo: "bar", bax: [12, 23] }),
+                      b64test: Base64.encode('abcdefgh')
+                    }
+                  }
+                });
+              });
+            
+              rsp.setConnectionDetails({ "foo": "bar" })
+              rsp.updateCompositeStatus({
+                something: "in the way",
+                she: { moves: true }
+              });
+            
+              rsp.updateCompositeStatus({ x: "y" });
+            };

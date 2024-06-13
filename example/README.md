@@ -3,14 +3,14 @@
 You can run your function locally and test it using `crossplane beta render`
 with these example manifests.
 
+Run the function locally in the background:
 ```shell
-# Run the function locally
-$ go run . --insecure --debug
+$ make run &
 ```
 
+Then call it with example manifests:
 ```shell
-# Then, in another terminal, call it with these example manifests
-$ crossplane beta render xr.yaml composition.yaml functions.yaml -r
+$ make render
 ---
 apiVersion: example.crossplane.io/v1
 kind: XR
@@ -22,4 +22,11 @@ kind: Result
 message: I was run with input "Hello world"!
 severity: SEVERITY_NORMAL
 step: run-the-template
+```
+
+Stop the function running in background:
+```shell
+$ fg
+# Press Ctrl-C
+^C
 ```
