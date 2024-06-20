@@ -26,10 +26,10 @@ spec:
         source:
           inline: |
             import * as Base64 from 'base64';
-             
+
             export default (req, rsp) => {
               const composite = req.observed.composite.resource;
-             
+
               rsp.setDesiredComposedResource('bucket', {
                 apiVersion: 'example.org/v1alpha1',
                 kind: 'Bucket',
@@ -39,11 +39,11 @@ spec:
                   }
                 }
               });
-             
+
               if (req.observed.resources?.bucket) {
                 // expose some connection details, get value from a resource generated within this function
                 rsp.setConnectionDetails({ bucketName: req.observed.resources.bucket.resource.metadata.name });
-             
+
                 // patch composite resource status
                 rsp.updateCompositeStatus({ bucketName: req.observed.resources.bucket.resource.metadata.name });
               }
@@ -53,6 +53,19 @@ spec:
        name: function-auto-ready
 ```
 
+## Install the JavaScript function to Cluster
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1beta1
+kind: Function
+metadata:
+  name: function-javascript
+spec:
+  package: docker.io/salemove/crossplane-function-javascript:v0.1.0
+EOF
+```
+
 ## Using this function
 
 At the moment, the function code can only be specified through `Inline` source.
@@ -60,7 +73,7 @@ At the moment, the function code can only be specified through `Inline` source.
 The JavaScript runtime is based on [Goja][goja] and expects the program to export
 a default function. The exported function is called with 2 arguments:
 * `request` - a [`RunFunctionRequest`][req] object converted into a nested plain map.
-  This means that you can access the composite resource, any composed resources, and 
+  This means that you can access the composite resource, any composed resources, and
   the function pipeline context using notation like:
   * `request.observed.composite.resource.metadata.name`
   * `request.observed.resources.mywidget.resource.status.widgets`
@@ -71,7 +84,7 @@ a default function. The exported function is called with 2 arguments:
    The object has the following methods:
    * `response.setDesiredComposedResource(name, properties)` - set the desired composed
      resource for the current function. The resource properties are passed as plain map.
-  
+
      To mark a desired resource as ready, use the `javascript.fn.crossplane.io/ready` annotation:
      ```javascript
      export default function (req, rsp) {
@@ -101,7 +114,7 @@ a default function. The exported function is called with 2 arguments:
        const username = Base64.decode(req.observed.resources.user.connectionDetails.username);
        rsp.setConnectionDetails({ username });
      }
-     ``` 
+     ```
    * `response.updateCompositeStatus(properties)` - merges the desired composite resource status in the
      function response.
      ```javascript
@@ -110,7 +123,7 @@ a default function. The exported function is called with 2 arguments:
        rsp.updateCompositeStatus({ userCount: 1, message: 'All good' })
      }
      ```
-     
+
 ## External dependencies
 
 Because the function isn't based on Node.js or any other of the full-fledged JavaScript runtimes, it
@@ -120,11 +133,11 @@ file, and inject it into the composition pipeline as a single blob.
 
 For convenience, the runtime includes some "faux" external packages:
 
-* `console` - implements some of the JavaScript's Console API static methods. The output is logged in the 
-  function container logs: 
+* `console` - implements some of the JavaScript's Console API static methods. The output is logged in the
+  function container logs:
   ```javascript
   console.log('Hello');
-  
+
   export default function (req, resp) {
     console.debug('Request', JSON.stringify(req));
     console.info('Info');
