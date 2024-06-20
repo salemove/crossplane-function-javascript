@@ -3,23 +3,24 @@ module github.com/salemove/crossplane-function-javascript
 go 1.22
 
 require (
+	dario.cat/mergo v1.0.0
 	github.com/alecthomas/kong v0.9.0
 	github.com/crossplane/crossplane-runtime v1.15.1
 	github.com/crossplane/function-sdk-go v0.2.0
 	github.com/dop251/goja v0.0.0-20240610225006-393f6d42497b
+	github.com/dop251/goja_nodejs v0.0.0-20240418154818-2aae10d4cbcf
 	github.com/google/go-cmp v0.6.0
 	github.com/jvatic/goja-babel v0.0.0-20240611121800-00d0f0990912
 	github.com/stretchr/testify v1.9.0
-	google.golang.org/protobuf v1.34.1
+	google.golang.org/protobuf v1.34.2
+	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/apimachinery v0.29.3
 	sigs.k8s.io/controller-tools v0.14.0
 )
 
 require (
-	dario.cat/mergo v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dlclark/regexp2 v1.11.0 // indirect
-	github.com/dop251/goja_nodejs v0.0.0-20240418154818-2aae10d4cbcf // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.8.0 // indirect
 	github.com/fatih/color v1.16.0 // indirect
@@ -67,7 +68,6 @@ require (
 	google.golang.org/grpc v1.61.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/api v0.29.1 // indirect
 	k8s.io/apiextensions-apiserver v0.29.1 // indirect
 	k8s.io/client-go v0.29.1 // indirect
