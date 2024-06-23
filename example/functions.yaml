@@ -8,4 +8,4 @@ metadata:
     render.crossplane.io/runtime: Development
 spec:
   # This is ignored when using the Development runtime.
-  package: function-javascript
+  package: docker.io/salemove/crossplane-function-javascript:v0.2.0
