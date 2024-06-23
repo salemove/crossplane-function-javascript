@@ -23,7 +23,6 @@ spec:
         source:
           inline: |
             import * as YAML from 'yaml';
-            import * as Base64 from 'base64';
             
             export default (req, rsp) => {
               console.log("request", JSON.stringify(req, null, 2));
@@ -46,7 +45,7 @@ spec:
                       region: region,
                       compositeRegion: req.observed.composite.resource.spec.region,
                       yamlTest: YAML.stringify({ foo: "bar", bax: [12, 23] }),
-                      b64test: Base64.encode('abcdefgh')
+                      b64test: btoa('abcdefgh')
                     }
                   }
                 });

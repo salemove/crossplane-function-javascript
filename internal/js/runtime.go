@@ -27,8 +27,9 @@ func NewRuntime() *Runtime {
 
 	registry := new(require.Registry)
 	registry.Enable(vm)
-	registry.RegisterNativeModule("base64", modules.Base64)
 	registry.RegisterNativeModule("yaml", modules.YAML)
+
+	modules.Base64.Enable(vm)
 	console.Enable(vm)
 
 	return &Runtime{vm: vm}

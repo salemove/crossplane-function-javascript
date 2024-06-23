@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+
 	"dario.cat/mergo"
 
 	"github.com/crossplane/crossplane-runtime/pkg/fieldpath"
@@ -103,8 +105,11 @@ func (r *Response) UpdateCompositeStatus(status map[string]any) error {
 
 // SetConnectionDetails sets the desired composite resource connection details
 // in the function response.
-func (r *Response) SetConnectionDetails(details resource.ConnectionDetails) {
-	r.desiredComposite.ConnectionDetails = details
+func (r *Response) SetConnectionDetails(details map[string]string) {
+	for key, val := range details {
+		decoded, _ := base64.StdEncoding.DecodeString(val)
+		r.desiredComposite.ConnectionDetails[key] = decoded
+	}
 }
 
 func (r *Response) setFunctionResponse(rsp *fnv1beta1.RunFunctionResponse) error {

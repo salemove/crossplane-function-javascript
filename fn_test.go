@@ -152,7 +152,7 @@ func TestRunFunction(t *testing.T) {
 								forProvider: { region: req.observed.composite.resource.spec.region }
 							}
 						});
-						rsp.setConnectionDetails({ key: 'value' });
+						rsp.setConnectionDetails({ key: btoa('value') });
 					};`),
 					Observed: &fnv1beta1.State{
 						Composite: &fnv1beta1.Resource{
