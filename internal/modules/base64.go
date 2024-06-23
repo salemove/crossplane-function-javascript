@@ -10,20 +10,20 @@ import (
 //
 // Example (js):
 //
-//	import * as Base64 from "base64";
-//	export default () => {
-//		return Base64.decode(Base64.encode("foo"))
-//	};
-func Base64(runtime *goja.Runtime, module *goja.Object) {
-	o := module.Get("exports").(*goja.Object)
+// const encoded = btoa('hello');
+// const decoded = atob(encoded);
+var Base64 = &Base64module{}
 
-	_ = o.Set("encode", func(call goja.FunctionCall) goja.Value {
+type Base64module struct{}
+
+func (b *Base64module) Enable(runtime *goja.Runtime) {
+	_ = runtime.Set("btoa", func(call goja.FunctionCall) goja.Value {
 		str := call.Argument(0).ToString().String()
 		result := base64.StdEncoding.EncodeToString([]byte(str))
 		return runtime.ToValue(result)
 	})
 
-	_ = o.Set("decode", func(call goja.FunctionCall) goja.Value {
+	_ = runtime.Set("atob", func(call goja.FunctionCall) goja.Value {
 		str := call.Argument(0).ToString().String()
 		result, err := base64.StdEncoding.DecodeString(str)
 		if err != nil {

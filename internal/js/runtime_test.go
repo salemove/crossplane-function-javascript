@@ -126,20 +126,20 @@ func TestRuntime_RunScript(t *testing.T) {
 			ok:     false,
 		},
 		{
-			desc:     "Base64.encode",
-			script:   `import * as Base64 from "base64"; export default function() { return Base64.encode('abcd') }`,
-			expected: "YWJjZA==",
+			desc:     "btoa",
+			script:   `export default function() { return btoa('Hēłłõ, wöřłď') }`,
+			expected: "SMSTxYLFgsO1LCB3w7bFmcWCxI8=",
 			ok:       true,
 		},
 		{
-			desc:     "Base64.decode",
-			script:   `import * as Base64 from "base64"; export default function() { return Base64.decode('YWJjZA==') }`,
-			expected: "abcd",
+			desc:     "atob",
+			script:   `export default function() { return atob('SMSTxYLFgsO1LCB3w7bFmcWCxI8=') }`,
+			expected: "Hēłłõ, wöřłď",
 			ok:       true,
 		},
 		{
-			desc:   "Base64.decode error",
-			script: `import * as Base64 from "base64"; export default function() { return Base64.decode('YWJjZA=') }`,
+			desc:   "atob error",
+			script: `export default function() { return atob('YWJjZA=') }`,
 			ok:     false,
 		},
 	}

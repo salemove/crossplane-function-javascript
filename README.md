@@ -25,8 +25,6 @@ spec:
       spec:
         source:
           inline: |
-            import * as Base64 from 'base64';
-
             export default (req, rsp) => {
               const composite = req.observed.composite.resource;
 
@@ -41,8 +39,12 @@ spec:
               });
 
               if (req.observed.resources?.bucket) {
-                // expose some connection details, get value from a resource generated within this function
-                rsp.setConnectionDetails({ bucketName: req.observed.resources.bucket.resource.metadata.name });
+                // Expose some connection details, get value from a resource generated within this function.
+                // The function expects Base64-encoded strings. Use "btoa" function to encode plain strings.
+                // ConnectionDetails from observed resources are already Base64-encoded.
+                rsp.setConnectionDetails({
+                  bucketName: btoa(req.observed.resources.bucket.resource.metadata.name) 
+                });
 
                 // patch composite resource status
                 rsp.updateCompositeStatus({ bucketName: req.observed.resources.bucket.resource.metadata.name });
@@ -62,7 +64,7 @@ kind: Function
 metadata:
   name: function-javascript
 spec:
-  package: docker.io/salemove/crossplane-function-javascript:v0.1.0
+  package: docker.io/salemove/crossplane-function-javascript:v0.2.0
 EOF
 ```
 
@@ -103,16 +105,23 @@ a default function. The exported function is called with 2 arguments:
    * `response.setConnectionDetails(details)` - sets the desired composite resource
      connection details.
 
-     Note that connection details from other observed resources are base64-encoded, and
-     if you want to use them in other composed resources, or in the composition connection
-     details, you need to decode them first:
+     Connection details values must be Base64-encoded, use function `btoa` to encode
+     plain strings to Base64.
+
+     Connection details from other observed resources are already Base64-encoded, so
+     you can pass their values to `setConnectionDetails` function as is:
      ```javascript
      import * as Base64 from 'base64';
 
      export default function (req, rsp) {
        // ...skip for brevity
-       const username = Base64.decode(req.observed.resources.user.connectionDetails.username);
-       rsp.setConnectionDetails({ username });
+       const username = req.observed.resources.user.connectionDetails.username;
+       const host = "localhost";
+
+       rsp.setConnectionDetails({
+         username,
+         host: btoa(host)
+       });
      }
      ```
    * `response.updateCompositeStatus(properties)` - merges the desired composite resource status in the
@@ -145,11 +154,18 @@ For convenience, the runtime includes some "faux" external packages:
     console.error('Error');
   }
   ```
-* `base64` - includes functions for working with Base64 encoding:
+* `btoa`, `atob` - functions for working with Base64 encoding:
   ```javascript
-  import * as Base64 from 'base64';
-  const enc = Base64.encode('string');
-  const dec = Base64.decode(enc); // => 'string'
+  const enc = btoa('string');
+  const dec = atob(enc); // => 'string'
+  ```
+
+  **NB!** Unlike functions [`Window.btoa()`][base64] and [`Window.atob()`][base64] available
+  in browsers, these functions work natively with UTF-8 strings and don't require additional
+  manipulations:
+  ```javascript
+  // this will work in your composition function, but won't work in browsers
+  btoa("a Ā 𐀀 文 🦄")
   ```
 * `yaml` - includes functions for encoding and decoding objects into YAML format:
   ```javascript
@@ -188,3 +204,4 @@ $ make xpkg.build
 [resp]: https://buf.build/crossplane/crossplane/docs/main:apiextensions.fn.proto.v1beta1#apiextensions.fn.proto.v1beta1.RunFunctionResponse
 [esbuild]: https://esbuild.github.io/
 [webpack]: https://webpack.js.org/
+[base64]: https://developer.mozilla.org/en-US/docs/Glossary/Base64
