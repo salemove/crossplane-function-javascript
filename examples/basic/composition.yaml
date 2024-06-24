@@ -21,9 +21,8 @@ spec:
           input-val-2: "Hello"
       spec:
         source:
+          transpile: true
           inline: |
-            import * as YAML from 'yaml';
-            
             export default (req, rsp) => {
               console.log("request", JSON.stringify(req, null, 2));
             
@@ -44,7 +43,6 @@ spec:
                       name: `test-${region}`,
                       region: region,
                       compositeRegion: req.observed.composite.resource.spec.region,
-                      yamlTest: YAML.stringify({ foo: "bar", bax: [12, 23] }),
                       b64test: btoa('abcdefgh')
                     }
                   }

@@ -1,0 +1,20 @@
+{
+  "name": "example",
+  "version": "1.0.0",
+  "description": "You can run your function locally and test it using `crossplane beta render` with these example manifests.",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "yaml": "^2.4.5"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.7",
+    "@babel/core": "^7.24.7",
+    "@babel/preset-env": "^7.24.7",
+    "esbuild": "^0.21.5",
+    "rollup": "^4.18.0"
+  }
+}

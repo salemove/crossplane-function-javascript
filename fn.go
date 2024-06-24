@@ -53,9 +53,14 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 		return rsp, nil
 	}
 
-	runtime := js.NewRuntime()
+	transpile := true
+	if in.Spec.Source.Transpile != nil {
+		transpile = *in.Spec.Source.Transpile
+	}
 
-	_, err = runtime.RunScript("<inline>.js", source, reqObj, respObj)
+	runtime := js.NewRuntime()
+	script := runtime.Script("<inline.js>", source, reqObj, respObj)
+	_, err = script.Run(js.TranspileToES5(transpile))
 	if err != nil {
 		response.Fatal(rsp, errors.Wrap(err, "function error"))
 		return rsp, nil

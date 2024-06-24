@@ -40,4 +40,12 @@ type InputSource struct {
 
 	// Inline is the inline form input of the function source
 	Inline string `json:"inline,omitempty"`
+
+	// Transpile indicates that the source should be transpiled to ES5
+	// before executing. This allows using modern ES syntax features in
+	// composition functions without transpiling them before inlining into
+	// compositions.
+	//
+	// +kubebuilder:default:=false
+	Transpile *bool `json:"transpile,omitempty"`
 }
