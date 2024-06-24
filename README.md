@@ -64,7 +64,7 @@ kind: Function
 metadata:
   name: function-javascript
 spec:
-  package: docker.io/salemove/crossplane-function-javascript:v0.2.0
+  package: docker.io/salemove/crossplane-function-javascript:v0.3.0
 EOF
 ```
 
