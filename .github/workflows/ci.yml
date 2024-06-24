@@ -12,6 +12,11 @@ on:
       version:
         description: Package version (e.g. v0.1.0)
         required: false
+      prerelease:
+        description: 'Publish as a prerelease'
+        required: false
+        default: false
+        type: boolean
 
 env:
   # Common versions
@@ -161,3 +166,19 @@ jobs:
       - name: Push Multi-Platform Package to Docker Hub
         if: env.XPKG_ACCESS_ID != ''
         run: "./crossplane --verbose xpkg push --package-files $(echo *.xpkg|tr ' ' ,) ${{ env.XPKG }}:${{ env.XPKG_VERSION }}"
+
+      - name: Create Tag
+        if: inputs.version != ''
+        uses: negz/create-tag@39bae1e0932567a58c20dea5a1a0d18358503320 # v1
+        with:
+          version: ${{ inputs.version }}
+          message: 'Release ${{ inputs.version }}'
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release
+        if: inputs.version != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{ inputs.prerelease }}
+          name: ${{ inputs.version }}
+          tag_name: ${{ inputs.version }}
