@@ -64,7 +64,7 @@ kind: Function
 metadata:
   name: function-javascript
 spec:
-  package: docker.io/salemove/crossplane-function-javascript:v0.2.0
+  package: docker.io/salemove/crossplane-function-javascript:v0.3.0
 EOF
 ```
 
@@ -111,8 +111,6 @@ a default function. The exported function is called with 2 arguments:
      Connection details from other observed resources are already Base64-encoded, so
      you can pass their values to `setConnectionDetails` function as is:
      ```javascript
-     import * as Base64 from 'base64';
-
      export default function (req, rsp) {
        // ...skip for brevity
        const username = req.observed.resources.user.connectionDetails.username;
@@ -139,6 +137,8 @@ Because the function isn't based on Node.js or any other of the full-fledged Jav
 doesn't support external dependencies or Node.js modules. However, users can use [ESBuild][esbuild],
 or [Webpack][webpack], or any other similar tool to bundle external dependencies into a single JavaScript
 file, and inject it into the composition pipeline as a single blob.
+
+See [`external-dependencies`](examples/external-dependencies) example in the [`examples/`](./examples) folder.
 
 For convenience, the runtime includes some "faux" external packages:
 
@@ -167,12 +167,40 @@ For convenience, the runtime includes some "faux" external packages:
   // this will work in your composition function, but won't work in browsers
   btoa("a Ā 𐀀 文 🦄")
   ```
-* `yaml` - includes functions for encoding and decoding objects into YAML format:
-  ```javascript
-  import * as YAML from 'yaml';
-  const enc = YAML.stringify(someObject);
-  const dec = YAML.parse(enc);
-  ```
+  
+## Code transpilation
+
+[Goja][goja] natively only supports ECMAScript 5.1 syntax, so in order to use modern syntax features,
+the source code must be _transpiled_ into a ES 5.1 syntax. For convenience, transpilation is built-in
+into the function server and is enabled by default.
+
+For large functions, however, this additional pre-processing can impact performance, so if the function 
+is already written in ES 5.1 compatible syntax (or pre-processed before injecting the source into a Composition),
+you can disable server-side transpilation:
+
+```yaml
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: function-javascript
+spec:
+  compositeTypeRef:
+    apiVersion: example.crossplane.io/v1
+    kind: XR
+  mode: Pipeline
+  pipeline:
+  - step: run-the-template
+    functionRef:
+      name: function-javascript
+    input:
+      apiVersion: javascript.fn.crossplane.io/v1beta1
+      kind: Input
+      spec:
+        source:
+          transpile: false # <-- disable transpilation
+          inline: |
+            // source code
+```
 
 ## Developing this function
 
@@ -205,3 +233,4 @@ $ make xpkg.build
 [esbuild]: https://esbuild.github.io/
 [webpack]: https://webpack.js.org/
 [base64]: https://developer.mozilla.org/en-US/docs/Glossary/Base64
+[Babel]: https://babeljs.io/

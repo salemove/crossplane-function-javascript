@@ -1,4 +1,4 @@
-# Example manifests
+# JavaScript Function Example
 
 You can run your function locally and test it using `crossplane beta render`
 with these example manifests.
@@ -17,11 +17,7 @@ kind: XR
 metadata:
   name: example-xr
 ---
-apiVersion: render.crossplane.io/v1beta1
-kind: Result
-message: I was run with input "Hello world"!
-severity: SEVERITY_NORMAL
-step: run-the-template
+# ... results
 ```
 
 Stop the function running in background:

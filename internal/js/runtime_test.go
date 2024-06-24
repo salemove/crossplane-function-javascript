@@ -12,23 +12,26 @@ func TestRuntime_RunScript(t *testing.T) {
 		desc         string
 		script       string
 		args         []interface{}
+		transpile    bool
 		ok           bool
 		expected     interface{}
 		expectedJSON string
 		expectedYaml string
 	}{
 		{
-			desc:     "no arguments",
-			script:   `export default () => { return 11 }`,
-			ok:       true,
-			expected: 11,
+			desc:      "no arguments",
+			script:    `export default () => { return 11 }`,
+			ok:        true,
+			transpile: true,
+			expected:  11,
 		},
 		{
-			desc:     "function with arguments",
-			script:   `export default n => { return n + 1 }`,
-			args:     []interface{}{10},
-			ok:       true,
-			expected: 11,
+			desc:      "function with arguments",
+			script:    `export default n => { return n + 1 }`,
+			args:      []interface{}{10},
+			transpile: true,
+			ok:        true,
+			expected:  11,
 		},
 		{
 			desc:   "function with complex arguments",
@@ -38,8 +41,9 @@ func TestRuntime_RunScript(t *testing.T) {
 					"number": 10,
 				},
 			},
-			ok:       true,
-			expected: 11,
+			transpile: true,
+			ok:        true,
+			expected:  11,
 		},
 		{
 			desc:   "struct fields and methods are uncapitalized",
@@ -53,28 +57,33 @@ func TestRuntime_RunScript(t *testing.T) {
 					Add:    func(a int, b int) int { return a + b },
 				},
 			},
-			ok:       true,
-			expected: 11,
+			transpile: true,
+			ok:        true,
+			expected:  11,
 		},
 		{
-			desc:   "script without exported non-function",
-			script: `export default "str";`,
-			ok:     false,
+			desc:      "script without exported non-function",
+			script:    `export default "str";`,
+			ok:        false,
+			transpile: true,
 		},
 		{
-			desc:   "script with exported null",
-			script: `export default null;`,
-			ok:     false,
+			desc:      "script with exported null",
+			script:    `export default null;`,
+			ok:        false,
+			transpile: true,
 		},
 		{
-			desc:   "script without exported default value",
-			script: `export const foo = () => {};`,
-			ok:     false,
+			desc:      "script without exported default value",
+			script:    `export const foo = () => {};`,
+			ok:        false,
+			transpile: true,
 		},
 		{
-			desc:   "script attempting to trick transpiler",
-			script: `export function _default() { return 1 }`,
-			ok:     false,
+			desc:      "script attempting to trick transpiler",
+			script:    `export function _default() { return 1 }`,
+			ok:        false,
+			transpile: true,
 		},
 		{
 			desc:   "module.exports are not supported",
@@ -82,73 +91,71 @@ func TestRuntime_RunScript(t *testing.T) {
 			ok:     false,
 		},
 		{
-			desc:   "script with syntax errors",
-			script: "!",
-			ok:     false,
+			desc:      "script with syntax errors",
+			script:    "!",
+			ok:        false,
+			transpile: true,
 		},
 		{
-			desc:   "errors in the exported function",
-			script: `export default function() { throw("error") }`,
-			ok:     false,
+			desc:      "errors in the exported function",
+			script:    `export default function() { throw("error") }`,
+			ok:        false,
+			transpile: true,
 		},
 		{
 			desc:         "JSON.stringify",
 			script:       `export default function() { return JSON.stringify({foo: "bar", bar: "baz"}) }`,
 			expectedJSON: `{"foo":"bar","bar":"baz"}`,
 			ok:           true,
+			transpile:    true,
 		},
 		{
-			desc:     "JSON.parse",
-			script:   `export default function() { return JSON.parse('{"foo":"bar","bar":"baz"}') }`,
-			expected: map[string]interface{}{"foo": "bar", "bar": "baz"},
-			ok:       true,
+			desc:      "JSON.parse",
+			script:    `export default function() { return JSON.parse('{"foo":"bar","bar":"baz"}') }`,
+			expected:  map[string]interface{}{"foo": "bar", "bar": "baz"},
+			ok:        true,
+			transpile: true,
 		},
 		{
-			desc:   "JSON.parse error",
-			script: `export default function() { return JSON.parse('{"foo":') }`,
-			ok:     false,
+			desc:      "JSON.parse error",
+			script:    `export default function() { return JSON.parse('{"foo":') }`,
+			ok:        false,
+			transpile: true,
 		},
 		{
-			desc:         "YAML.stringify",
-			script:       `import * as YAML from "yaml"; export default function() { return YAML.stringify({foo: "bar", "bar": "baz"}) }`,
-			expectedYaml: "foo: bar\nbar: baz\n",
-			ok:           true,
+			desc:      "btoa",
+			script:    `export default function() { return btoa('Hēłłõ, wöřłď') }`,
+			expected:  "SMSTxYLFgsO1LCB3w7bFmcWCxI8=",
+			ok:        true,
+			transpile: true,
 		},
 		{
-			desc:     "YAML.parse",
-			script:   `import * as YAML from "yaml"; export default function() { return YAML.parse("foo: bar\nbar: baz\n") }`,
-			expected: map[string]interface{}{"foo": "bar", "bar": "baz"},
-			ok:       true,
+			desc:      "atob",
+			script:    `export default function() { return atob('SMSTxYLFgsO1LCB3w7bFmcWCxI8=') }`,
+			expected:  "Hēłłõ, wöřłď",
+			ok:        true,
+			transpile: true,
 		},
 		{
-			desc:   "YAML.parse error",
-			script: `import * as YAML from "yaml"; export default function() { return YAML.parse("foo: bar\n  bar: baz\n") }`,
-			ok:     false,
+			desc:      "atob error",
+			script:    `export default function() { return atob('YWJjZA=') }`,
+			ok:        false,
+			transpile: true,
 		},
 		{
-			desc:     "btoa",
-			script:   `export default function() { return btoa('Hēłłõ, wöřłď') }`,
-			expected: "SMSTxYLFgsO1LCB3w7bFmcWCxI8=",
-			ok:       true,
-		},
-		{
-			desc:     "atob",
-			script:   `export default function() { return atob('SMSTxYLFgsO1LCB3w7bFmcWCxI8=') }`,
-			expected: "Hēłłõ, wöřłď",
-			ok:       true,
-		},
-		{
-			desc:   "atob error",
-			script: `export default function() { return atob('YWJjZA=') }`,
-			ok:     false,
+			desc:      "without transpile",
+			script:    `exports.default = function() { return 1 }`,
+			ok:        true,
+			transpile: false,
+			expected:  1,
 		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			r := NewRuntime()
-
-			res, err := r.RunScript("test.js", tc.script, tc.args...)
+			script := r.Script("test.js", tc.script, tc.args...)
+			res, err := script.Run(TranspileToES5(tc.transpile))
 
 			if tc.ok {
 				require.NoError(t, err)

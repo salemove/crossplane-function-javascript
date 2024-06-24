@@ -19,6 +19,16 @@ type Runtime struct {
 	vm *goja.Runtime
 }
 
+type Script struct {
+	Name   string
+	Source string
+	Args   []interface{}
+
+	runtime *Runtime
+}
+
+type ScriptOption func(s *Script) error
+
 // NewRuntime creates a new JavaScript runtime. The runtime is set up to uncapitalize
 // struct fields and methods passed into runtime as objects.
 func NewRuntime() *Runtime {
@@ -27,7 +37,6 @@ func NewRuntime() *Runtime {
 
 	registry := new(require.Registry)
 	registry.Enable(vm)
-	registry.RegisterNativeModule("yaml", modules.YAML)
 
 	modules.Base64.Enable(vm)
 	console.Enable(vm)
@@ -45,11 +54,25 @@ func (runtime *Runtime) Get(name string) goja.Value {
 	return runtime.vm.Get(name)
 }
 
-// RunScript runs a script, and then invokes the function exported by the script ("export default function")
-// with the given arguments.
-func (runtime *Runtime) RunScript(name string, source string, args ...any) (interface{}, error) {
-	exports, err := runtime.compile(name, source)
+func (runtime *Runtime) Script(name string, source string, args ...interface{}) *Script {
+	return &Script{
+		Name:   name,
+		Source: source,
+		Args:   args,
 
+		runtime: runtime,
+	}
+}
+
+// Run runs a script, and then invokes the function exported by the script ("export default function")
+// with the script's arguments.
+func (s *Script) Run(opts ...ScriptOption) (interface{}, error) {
+	for _, opt := range opts {
+		if err := opt(s); err != nil {
+			return nil, err
+		}
+	}
+	exports, err := s.runtime.compile(s.Name, s.Source)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +80,7 @@ func (runtime *Runtime) RunScript(name string, source string, args ...any) (inte
 	def := exports.Get("default")
 
 	if fn, ok := goja.AssertFunction(def); ok {
-		values := runtime.asValues(args)
+		values := s.runtime.asValues(s.Args)
 
 		if val, err := fn(exports, values...); err == nil {
 			return val.Export(), nil
@@ -65,25 +88,48 @@ func (runtime *Runtime) RunScript(name string, source string, args ...any) (inte
 			return nil, err
 		}
 	} else if def == nil {
-		return nil, fmt.Errorf("%s must export default function", name)
+		return nil, fmt.Errorf("%s must export default function", s.Name)
 	} else {
-		return nil, fmt.Errorf("%s must export default function, %s exported", name, def.ExportType())
+		return nil, fmt.Errorf("%s must export default function, %s exported", s.Name, def.ExportType())
+	}
+}
+
+// TranspileToES5 transforms the script source code to ES5.1 using Babel
+func TranspileToES5(val bool) ScriptOption {
+	return func(s *Script) error {
+		if !val {
+			return nil
+		}
+
+		code, err := babel.TransformString(s.Source, map[string]interface{}{
+			"plugins": []interface{}{
+				[]interface{}{"transform-modules-commonjs", map[string]interface{}{"loose": false}},
+			},
+			"ast":            false,
+			"sourceMaps":     "inline", // include source maps in the output for better stack traces
+			"babelrc":        false,
+			"inputSourceMap": true, // if the function source already includes a source map, use it instead
+			"compact":        false,
+			"retainLines":    true,
+			"highlightCode":  false,
+		})
+
+		if err != nil {
+			return err
+		}
+
+		s.Source = code
+		return nil
 	}
 }
 
 // compile runs a script from file and returns the value of "export default function" expression from the script.
 // The exported function then should be run separately.
 func (runtime *Runtime) compile(name string, source string) (*goja.Object, error) {
-	code, err := transpileFile(source)
-
-	if err != nil {
-		return nil, err
-	}
-
 	// CommonJS exports work, but we need to manually define an object with this property
 	_ = runtime.vm.Set("exports", map[string]interface{}{})
 
-	if _, err := runtime.vm.RunScript(name, code); err != nil {
+	if _, err := runtime.vm.RunScript(name, source); err != nil {
 		return nil, err
 	}
 
@@ -92,26 +138,14 @@ func (runtime *Runtime) compile(name string, source string) (*goja.Object, error
 	return exports, nil
 }
 
-// read the file, transpile it to ES5.1 (using Babel) and return the transpiled source code
-func transpileFile(source string) (string, error) {
-	return babel.TransformString(source, map[string]interface{}{
-		"plugins": []interface{}{
-			[]interface{}{"transform-modules-commonjs", map[string]interface{}{"loose": false}},
-		},
-		"ast":            false,
-		"sourceMaps":     "inline", // include source maps in the output for better stack traces
-		"babelrc":        false,
-		"inputSourceMap": true, // if the function source already includes a source map, use it instead
-		"compact":        false,
-		"retainLines":    true,
-		"highlightCode":  false,
-	})
-}
-
 func (runtime *Runtime) asValues(args []interface{}) (ret []goja.Value) {
 	for _, arg := range args {
 		ret = append(ret, runtime.vm.ToValue(arg))
 	}
 
 	return ret
+}
+
+func init() {
+	_ = babel.Init(4)
 }
